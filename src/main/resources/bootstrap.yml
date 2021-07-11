@@ -1,0 +1,11 @@
+server:
+  servlet:
+    context-path: "/library/"
+spring:
+  application:
+    name: library
+  profiles:
+    active: local
+  cloud:
+    config:
+      uri: http://library.app.local.lan/config-server

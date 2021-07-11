@@ -1,0 +1,110 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.3'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id "org.sonarqube" version "3.1.1"
+    id 'jacoco'
+}
+
+group = 'br.com.rafaelshayashi'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('testcontainersVersion', "1.15.2")
+    set('springCloudVersion', "2020.0.1")
+    set('springDocVersion', '1.5.8')
+}
+
+dependencies {
+    // Spring web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring data
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+
+    // Spring feign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+
+    // Spring security
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
+    // Docs
+    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-security:${springDocVersion}"
+
+    // Tools
+    implementation 'org.flywaydb:flyway-core'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock'
+    testImplementation 'org.bitbucket.b_c:jose4j:0.7.2'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "library-ddd-by-example-spring-mvc-library"
+        property "sonar.organization", "rafaelshayashi"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.cpd.exclusions", "**/controller/request/*.java"
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+    reportsDir = file("$buildDir/jacoco")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+// Gradle lockfile for improving Snyk scan
+dependencyLocking() {
+    lockAllConfigurations()
+}
+
+task resolveAndLockAll {
+    doFirst {
+        assert gradle.startParameter.writeDependencyLocks
+    }
+    doLast {
+        configurations.findAll {
+            it.canBeResolved
+        }.each {it.resolve()}
+    }
+}
